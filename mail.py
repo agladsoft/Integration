@@ -67,7 +67,7 @@ class LocalDB:
                         with self.lock:
                             db.insert(
                                 {'id': massage_id, 'Date': date, 'Box': flag_select})
-                logger.info(f"Write email id = {massage_id} in DATABASE")
+        logger.info("Write email in DATABASE")
 
     def delete_by_date(self) -> None:
         """
