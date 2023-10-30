@@ -28,5 +28,6 @@ def init_my_logging():
     console = logging.StreamHandler()
     console.setLevel(logging.INFO)
 
+
 init_my_logging()
 
