@@ -78,7 +78,7 @@ class CrmClient(object):
         except requests.exceptions.RequestException as e:
             logger.error(f"An error occurred during the API request: {str(e)}. Name is {name}")
 
-    def update_contact_post_account(self, rn_number: str, value: dict, user=None) -> Optional[requests]:
+    def update_contact_post_account(self, rn_number: str, value: dict, user=None) -> Optional[requests.Response]:
         """
         При удачном получение данных по сделки мы записываем результат в crm при помощи метода post библиотеки requests.
         Создаём payload в который передаём все данные для записи
@@ -113,7 +113,7 @@ class CrmClient(object):
         except requests.exceptions.RequestException as e:
             logger.error(f"An error occurred during the API request: {str(e)}. Email is {user}. Tag is @{user}")
 
-    def update_contact_post_opportunity(self, name: str, value: dict, user=None) -> Optional[requests]:
+    def update_contact_post_opportunity(self, name: str, value: dict, user=None) -> Optional[requests.Response]:
         """
         При удачном получение данных по контрагенту мы записываем результат в crm при помощи метода post библиотеки requests.
         Создаём payload в который передаём все данные для записи
