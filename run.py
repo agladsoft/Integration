@@ -47,7 +47,7 @@ def write_crm():
             else:
                 user.append((email_user, password))
     with ThreadPool(processing) as p:
-        p.starmap(Mail().connect_email, [user[0]])
+        p.starmap(Mail().connect_email, user)
 
 
 if __name__ == '__main__':

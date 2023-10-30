@@ -4,4 +4,4 @@ crm_login : !!str 'first\request'
 crm_password : !!str 'Edc789'
 base_url : !!str 'http://srvr-mscrm.first/Ruscon/api/data/v8.2/'
 file_name : !!str 'users.csv'
-Processing : !!int 4
+Processing : !!int 1
