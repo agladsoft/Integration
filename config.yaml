@@ -1,0 +1,7 @@
+systemuser_id_crm : !!str 'bb72dff4-9037-e611-80c3-00505693217d'
+contact_id_crm: !!str '94b2c2fc-c563-e611-80c7-00505693217d'
+crm_login : !!str 'first\request'
+crm_password : !!str 'Edc789'
+base_url : !!str 'http://srvr-mscrm.first/Ruscon/api/data/v8.2/'
+file_name : !!str 'users.csv'
+Processing : !!int 1
