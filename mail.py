@@ -188,12 +188,7 @@ class Mail:
         list_date_title: list = []
         list_posts: list = sorted(imap.search(None, date)[1][0].split(), reverse=True)
         for i, post in enumerate(list_posts, 1):
-            time_one = time.time()
             res, msg = imap.fetch(post, '(RFC822)')
-            time_two = time.time()
-            dis = time_two - time_one
-            logger.info(f"Current position message in email is {post}. Index is {i}. "
-                        f"Len messages is {len(list_posts)}. Time is {dis}")
             try:
                 msg: imaplib = email.message_from_bytes(msg[0][1])
             except Exception as ex:
