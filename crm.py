@@ -108,7 +108,7 @@ class CrmClient(object):
         try:
             answer: requests = requests.post(f"{self.baseurl}emails", auth=self.get_auth(), headers=self.headers,
                                              data=json.dumps(payload))
-            logger.info(f'Update to CRM user({user}) update_contact_put_id status code{answer.status_code}')
+            logger.info(f'Update to CRM user({user}) update_contact_put_id status code {answer.status_code}')
             return answer
         except requests.exceptions.RequestException as e:
             logger.error(f"An error occurred during the API request: {str(e)}. Email is {user}. Tag is @{user}")
@@ -142,7 +142,7 @@ class CrmClient(object):
         try:
             answer: requests = requests.post(f"{self.baseurl}emails", auth=self.get_auth(), headers=self.headers,
                                              data=json.dumps(payload))
-            logger.info(f'Update to CRM user({user})  update_contact_put_name status code{answer.status_code}')
+            logger.info(f'Update to CRM user({user})  update_contact_put_name status code {answer.status_code}')
             return answer
         except requests.exceptions.RequestException as e:
             logger.error(f"An error occurred during the API request: {str(e)}. Email is {user}. Tag is @{user}")
