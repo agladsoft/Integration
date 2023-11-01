@@ -80,7 +80,7 @@ class LocalDB:
             for name in files:
                 with TinyDB(root + name, indent=4) as db:
                     date: str = (datetime.date.today() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
-                    logger.info(f'|Thread {current_thread().ident}| Delete last date')
+                    logger.info(f'|Thread {current_thread().ident}| Delete last date {name}')
                     query = Query()
                     db.remove(query.Date < date)
 
