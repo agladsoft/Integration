@@ -29,6 +29,7 @@ def write_crm():
      Если зашифрован раскодировываем и запускается паралелльная обработка пользователей в мультипроцессорной обработке
     :return:
     """
+
     with open("config.yaml", 'r') as stream:
         data_loaded = yaml.safe_load(stream)
         file_name: str = data_loaded['file_name']
@@ -50,6 +51,9 @@ def write_crm():
         p.starmap(Mail().connect_email, user)
 
 
+
 if __name__ == '__main__':
+    logger.info('Run to Work')
     write_crm()
     LocalDB().delete_by_date()
+    logger.info('End Work')
