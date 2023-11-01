@@ -49,7 +49,7 @@ def write_crm():
             else:
                 user.append((email_user, password))
         with ThreadPoolExecutor(max_workers=processing) as executor:
-            for email, password in users:
+            for email, password in user:
                 executor.submit(Mail().connect_email, email, password)
 
 
