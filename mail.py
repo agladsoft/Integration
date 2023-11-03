@@ -78,12 +78,14 @@ class LocalDB:
         """
         for root, dirs, files in os.walk('email_users/'):
             for name in files:
-                with TinyDB(root + name, indent=4) as db:
-                    date: str = (datetime.date.today() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
-                    logger.info(f'|Thread {current_thread().ident}| Delete last date {name}')
-                    query = Query()
-                    db.remove(query.Date < date)
-
+                try:
+                    with TinyDB(root + name, indent=4) as db:
+                        date: str = (datetime.date.today() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+                        logger.info(f'|Thread {current_thread().ident}| Delete last date {name}')
+                        query = Query()
+                        db.remove(query.Date < date)
+                except Exception as ex:
+                    logger.info(f'Ошибка при чтение файла {name}')
 
 def change_charset(text: str, char: str) -> str:
     """
