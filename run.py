@@ -50,9 +50,10 @@ def write_crm():
                 user.append((email_user, password))
         # for email, password in user:
         #     Mail().connect_email(email, password)
-        with ThreadPoolExecutor(max_workers=processing) as executor:
-            for email, password in user:
-                executor.submit(Mail().connect_email, email, password)
+        with ThreadPoolExecutor(max_workers=None) as executor:
+            # for email, password in user:
+            #     executor.submit(Mail().connect_email, email, password)
+            executor.map(Mail().connect_email, user)
 
 
 if __name__ == '__main__':
