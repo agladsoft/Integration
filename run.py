@@ -6,7 +6,7 @@ from log import logger
 from mail import Mail, check_email, LocalDB
 from multiprocessing import Pool as ThreadPool
 from ecrypt_user import encrypt_user, decrypt_user
-from concurrent.futures import ThreadPoolExecutor,ProcessPoolExecutor
+from concurrent.futures import ThreadPoolExecutor,ProcessPoolExecutor,as_completed, wait
 
 
 def time_count(func):
@@ -48,14 +48,18 @@ def write_crm():
                 continue
             else:
                 user.append((email_user, password))
-        with ProcessPoolExecutor(max_workers=None) as executor:
+        with ThreadPoolExecutor(max_workers=None) as executor:
+            future_list = []
             for email, password in user:
-                executor.submit(Mail().connect_email, email, password)
+                future = executor.submit(Mail().connect_email, email, password)
+                future_list.append(future)
             # executor.map(Mail().connect_email, user)
-
+            wait(future_list)
+            LocalDB().delete_by_date()
+            # for f in as_completed(future_list):
+            #     print(f.result())
 
 if __name__ == '__main__':
     logger.info('Run to Work')
     write_crm()
-    LocalDB().delete_by_date()
     logger.info('End Work')
