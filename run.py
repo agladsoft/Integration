@@ -55,6 +55,7 @@ def write_crm():
                 future_list.append(future)
             # executor.map(Mail().connect_email, user)
             wait(future_list)
+            logger.info('Delete last day')
             LocalDB().delete_by_date()
             # for f in as_completed(future_list):
             #     print(f.result())
