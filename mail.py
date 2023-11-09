@@ -69,7 +69,7 @@ class LocalDB:
                         with self.lock:
                             db.insert(
                                 {'id': massage_id, 'Date': date, 'Box': flag_select})
-        logger.info(f"|Thread {current_thread().ident}| Write email in DATABASE")
+        logger.info(f"{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| Write email in DATABASE")
 
     def delete_by_date(self) -> None:
         """
@@ -81,7 +81,7 @@ class LocalDB:
                 try:
                     with TinyDB(root + name, indent=4) as db:
                         date: str = (datetime.date.today() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
-                        logger.info(f'|Thread {current_thread().ident}| Delete last date {name}')
+                        logger.info(f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| Delete last date {name}')
                         query = Query()
                         db.remove(query.Date < date)
                 except Exception as ex:
@@ -94,7 +94,7 @@ class LocalDB:
         try:
             with TinyDB(root + name, indent=4) as db:
                 date: str = (datetime.date.today() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
-                logger.info(f'|Thread {current_thread().ident}| Delete last date {name}')
+                logger.info(f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| Delete last date {name}')
                 query: Query = Query()
                 db.remove(query.Date < date)
         except Exception as ex:
@@ -177,15 +177,15 @@ class Mail:
             imap: imaplib = imaplib.IMAP4_SSL(self.server)
             imap.login(mail_login, mail_password)
         except Exception:
-            logger.info(f'|Thread {current_thread().ident}| No connection {mail_login} wrong password or login')
+            logger.info(f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| No connection {mail_login} wrong password or login')
             return
         self.list_table: List[dict] = LocalDB(mail_login).id_list
         INBOX, SENT = self.get_inbox_sent(imap.list())
-        logger.info(f'|Thread {current_thread().ident}| Connect Email Inbox {mail_login}')
+        logger.info(f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| Connect Email Inbox {mail_login}')
         imap.select(INBOX, readonly=True)
         if self.mail_read(user=mail_login, imap=imap, date=self.request_date_today, flag_select='INBOX'):
             self.mail_read(user=mail_login, imap=imap, date=self.request_date_yesterday, flag_select='INBOX')
-        logger.info(f'|Thread {current_thread().ident}| Connect Email Send {mail_login}')
+        logger.info(f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| Connect Email Send {mail_login}')
         imap.select(SENT, readonly=True)
         if self.mail_read(user=mail_login, imap=imap, date=self.request_date_today, flag_select='SEND'):
             self.mail_read(user=mail_login, imap=imap, date=self.request_date_yesterday, flag_select='SEND')
@@ -215,11 +215,11 @@ class Mail:
             try:
                 msg: imaplib = email.message_from_bytes(msg[0][1])
             except Exception as ex:
-                logger.info(f'|Thread {current_thread().ident}| error read massage ', str(ex))
+                logger.info(f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| error read massage ', str(ex))
                 try:
                     msg: imaplib = self.for_massage(msg)
                 except Exception as exx:
-                    logger.info(f'|Thread {current_thread().ident}| {msg} error {exx}')
+                    logger.info(f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| {msg} error {exx}')
                     continue
             massage_id, date = self.get_message_id_date(msg)
             if massage_id in self.list_table:
@@ -238,9 +238,9 @@ class Mail:
         LocalDB(user).append_local_db(list_date_title, flag_select=flag_select)
         self.list_table: List[str] = LocalDB(user).id_list
         if count == 0:
-            logger.info(f'|Thread {current_thread().ident}| Don`t new massages')
+            logger.info(f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| Don`t new massages')
         else:
-            logger.info(f"|Thread {current_thread().ident}| Write {count} massages successful")
+            logger.info(f"{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| Write {count} massages successful")
         return flag
 
     def check_opportunity(self, title):
@@ -260,7 +260,7 @@ class Mail:
         :param user: email пользователя по которому происходит выборка
         :return: При удачной записи мы возвращаем True в противном случае False
         """
-        logger.info(f'|Thread {current_thread().ident}| {user} (title: {title})')
+        logger.info(f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| {user} (title: {title})')
         title_end: List[str] = title.split('#')
         if len(title_end) > 1:
             value: dict = {
@@ -274,14 +274,14 @@ class Mail:
                 res: str = '-'.join(self.find_deal(tit))
                 if not res:
                     continue
-                logger.info(f'|Thread {current_thread().ident}| {user} write crm #=  {res}')
+                logger.info(f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| {user} write crm #=  {res}')
                 if res[0] in ['K', 'К']:
                     if CrmClient().update_contact_post_account(res, value, user=user):
                         return True
                 elif res[0] == 'П':
                     if CrmClient().update_contact_post_opportunity(res, value, user=user):
                         return True
-            logger.info(f'|Thread {current_thread().ident}| Не найден #номер_проекта и #номер_контрагента')
+            logger.info(f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| Не найден #номер_проекта и #номер_контрагента')
         return False
 
     def for_massage(self, massage: Message) -> imaplib:
@@ -290,13 +290,13 @@ class Mail:
         :param massage: Список кортежей с объектами сообщений
         :return: Объект imaplib в котором содержатся данные о сообщение(id, дата, заголовок, тело сообщения)
         """
-        logger.info(f'|Thread {current_thread().ident}| error massage')
+        logger.info(f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| error massage')
         for n, m in enumerate(massage):
             try:
                 msg: imaplib = email.message_from_bytes(massage[n][1])
                 return msg
             except Exception as ex:
-                logger.info(f'|Thread {current_thread().ident}| {ex}')
+                logger.info(f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| {ex}')
                 continue
 
     def get_message_id_date(self, msg: Message) -> Tuple[str, str]:
@@ -308,7 +308,7 @@ class Mail:
         try:
             massage_id: str = msg['message-ID'].strip('<>') if msg['message-ID'] else None
         except Exception as ex:
-            logger.info(f'|Thread {current_thread().ident}| Ошибка получения id {ex}')
+            logger.info(f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| Ошибка получения id {ex}')
             massage_id: str = 'id не получен'
         date: str = self.get_date(msg['DATE'])
         return massage_id, date
@@ -322,7 +322,7 @@ class Mail:
         try:
             title: str = self.get_title(decode_header(msg['SUBJECT'])[0]) if msg["Subject"] else 'По умолчанию'
         except Exception as ex:
-            logger.info(f"|Thread {current_thread().ident}| {ex} Ошибка заголовка")
+            logger.info(f"{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| {ex} Ошибка заголовка")
             title: str = 'По умолчанию'
         return title
 
@@ -339,7 +339,7 @@ class Mail:
                     html: str = f"{self.get_text(i)}"
                     text: str = html.replace("b'", "")
         except Exception as ex:
-            logger.info(f'|Thread {current_thread().ident}| Ошибка при получение тела сообщения {ex}')
+            logger.info(f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| Ошибка при получение тела сообщения {ex}')
         return text
 
     def get_title(self, title: Union[bytes, tuple]) -> str:
@@ -438,7 +438,7 @@ class Mail:
             try:
                 sender: str = msg['From'].split('<')[1].replace('>', '')
             except Exception as ex:
-                logger.info(f'|Thread {current_thread().ident}| Ошибка в получение отправителя {ex}')
+                logger.info(f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| Ошибка в получение отправителя {ex}')
                 sender: str = 'Отправитель не получен'
         recipients: list = []
         addr_fields: list = ['To', 'Cc', 'Bcc']
@@ -461,7 +461,7 @@ class Mail:
 
             return inbox, sent
         except Exception as ex:
-            logger.info(f"|Thread {current_thread().ident}| Ошибка {ex}")
+            logger.info(f"{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| Ошибка {ex}")
             inbox: str
             sent: str
             inbox, sent = 'INBOX', 'SENT'

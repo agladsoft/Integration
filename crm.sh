@@ -6,5 +6,5 @@ source ${path}/venv/bin/activate
 while true;
 do
 	python3 ${path}/run.py;
-	sleep 30;
+	sleep 60;
 done

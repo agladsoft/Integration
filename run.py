@@ -1,3 +1,4 @@
+import datetime
 import os
 import time
 from functools import wraps
@@ -44,7 +45,7 @@ def write_crm():
             password: str
             email_user, password = row[0].split(';')
             if not check_email(email_user):
-                logger.info(f'Wrong email {email_user}')
+                logger.info(f'{datetime.datetime.now().replace(microsecond=0)}Wrong email {email_user}')
                 continue
             else:
                 user.append((email_user, password))
@@ -55,7 +56,7 @@ def write_crm():
                 # future_list.append(future)
             # executor.map(Mail().connect_email, user)
             # wait(future_list)
-            logger.info('Delete last day')
+            # logger.info('Delete last day')
             # LocalDB().delete_by_date()
             # for f in as_completed(future_list):\
             #     print(f.result())
