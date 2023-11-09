@@ -1,5 +1,6 @@
 while true;
 do
-	python3 /home/softit/Integration_crm/run.py;
+
+	/home/softit/Integration_crm/venv/bin/python python3 /home/softit/Integration_crm/run.py;
 	sleep 30;
 done
