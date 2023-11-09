@@ -50,11 +50,11 @@ def write_crm():
                 user.append((email_user, password))
         with ThreadPoolExecutor(max_workers=None) as executor:
             future_list = []
-            for email, password in user:
-                future = executor.submit(Mail().connect_email, email, password)
-                future_list.append(future)
+            # for email, password in user:
+            future_list = executor.map(Mail().connect_email,user)
+                # future_list.append(future)
             # executor.map(Mail().connect_email, user)
-            wait(future_list)
+            # wait(future_list)
             logger.info('Delete last day')
             # LocalDB().delete_by_date()
             # for f in as_completed(future_list):\

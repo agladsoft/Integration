@@ -8,7 +8,7 @@ from email.message import Message
 from threading import current_thread
 
 import charset_normalizer as cn
-from bs4 import BeautifulSoup,Tag
+from bs4 import BeautifulSoup, Tag
 from crm import CrmClient
 from tinydb import TinyDB, Query
 import re
@@ -87,6 +87,20 @@ class LocalDB:
                 except Exception as ex:
                     logger.info(f'Ошибка при чтение файла {name}')
 
+    @staticmethod
+    def delete_by_date_user(name):
+        root: str = 'email_users/'
+        name: str = name + '.json'
+        try:
+            with TinyDB(root + name, indent=4) as db:
+                date: str = (datetime.date.today() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+                logger.info(f'|Thread {current_thread().ident}| Delete last date {name}')
+                query: Query = Query()
+                db.remove(query.Date < date)
+        except Exception as ex:
+            logger.info(f'Ошибка при чтение файла {name}. Ошибка : {ex}')
+
+
 def change_charset(text: str, char: str) -> str:
     """
     Замена в файле html параметра charset на utf - 8 для раскодировки данных браузером при открытие html страницы
@@ -146,8 +160,9 @@ class Mail:
         self.date_format = "%d-%b-%Y"
         self.request_date_today = f'(SINCE "{self.today.strftime(self.date_format)}")'
         self.request_date_yesterday = f'(SINCE "{self.yesterday.strftime(self.date_format)}") (BEFORE "{self.today.strftime(self.date_format)}")'
+        self.local_db = LocalDB()
 
-    def connect_email(self, mail_login: str, mail_password: str) -> None:
+    def connect_email(self, user: tuple) -> None:
         """
         Подключение к серверу через библиотеку imap для чтения сообщений.
         Чтение сообщений из почты
@@ -155,7 +170,10 @@ class Mail:
         :param mail_password: password пользователя
         :return: None
         """
+        mail_login = user[0]
+        mail_password = user[1]
         try:
+            time.sleep(1)
             imap: imaplib = imaplib.IMAP4_SSL(self.server)
             imap.login(mail_login, mail_password)
         except Exception:
@@ -173,6 +191,7 @@ class Mail:
             self.mail_read(user=mail_login, imap=imap, date=self.request_date_yesterday, flag_select='SEND')
         imap.close()
         imap.logout()
+        self.local_db.delete_by_date_user(mail_login)
 
     def mail_read(self, user: str, imap: imaplib.IMAP4_SSL, date: datetime, flag_select=None) -> bool:
         """
@@ -362,7 +381,7 @@ class Mail:
         try:
             text_result: str = text.decode(detect['encoding'])
             result: str = change_charset(text_result, 'utf-8')
-        except (AttributeError,TypeError):
+        except (AttributeError, TypeError):
             if text is None:
                 return ''
             result: str = change_charset(text, 'utf-8')
@@ -458,4 +477,3 @@ class Mail:
         pattern = r"([А-ЯA-Z])-([А-ЯA-Zа-яa-z]+)-(\d+)"
         matches = re.findall(pattern, deal)
         return matches[0] if len(matches) >= 1 else ''
-
