@@ -1,4 +1,4 @@
-
+#!/bin/bash
 path=/home/softit/Integration_crm
 while true;
 do
