@@ -49,12 +49,12 @@ def write_crm():
                 continue
             else:
                 user.append((email_user, password))
-        for email, password in user:
-            Mail().connect_email(email, password)
-        # with ProcessPoolExecutor(max_workers=processing) as executor:
-        #     future_list = []
-        #     # for email, password in user:
-        #     future_list = executor.map(Mail().connect_email,user)
+        # for email, password in user:
+        #     Mail().connect_email(email, password)
+        with ProcessPoolExecutor(max_workers=processing) as executor:
+            future_list = []
+            # for email, password in user:
+            future_list = executor.map(Mail().connect_email,user)
         # future_list.append(future)
         # executor.map(Mail().connect_email, user)
         # wait(future_list)

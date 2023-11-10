@@ -162,7 +162,7 @@ class Mail:
         self.request_date_yesterday = f'(SINCE "{self.yesterday.strftime(self.date_format)}") (BEFORE "{self.today.strftime(self.date_format)}")'
         self.local_db = LocalDB()
 
-    def connect_email(self,mail_login: str,mail_password: str ) -> None:
+    def connect_email(self,user ) -> None:
         """
         Подключение к серверу через библиотеку imap для чтения сообщений.
         Чтение сообщений из почты
@@ -170,6 +170,8 @@ class Mail:
         :param mail_password: password пользователя
         :return: None
         """
+        mail_login = user[0]
+        mail_password = user[1]
         try:
             time.sleep(1)
             imap: imaplib = imaplib.IMAP4_SSL(self.server)
