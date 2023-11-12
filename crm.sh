@@ -11,7 +11,7 @@
 #	sleep 60;
 #done
 
-path=path=/home/softit/Integration_crm
+path=/home/softit/Integration_crm
 cd $path
 source ${path}/venv/bin/activate
 while true; do
