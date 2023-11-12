@@ -15,7 +15,7 @@ import re
 from typing import List, Tuple, Union
 from log import logger
 from dateutil.parser import parse
-from multiprocessing import Lock
+# from multiprocessing import Lock
 
 
 class LocalDB:
@@ -31,9 +31,9 @@ class LocalDB:
     def __init__(self, name=None):
         if name is not None:
             self.file_name: str = self.find(name)
-            self.lock = Lock()
-            with self.lock:
-                self.id_list: list = [i['id'] for i in TinyDB(self.file_name, indent=4).all()]
+            # self.lock = Lock()
+            # with self.lock:
+            self.id_list: list = [i['id'] for i in TinyDB(self.file_name, indent=4).all()]
 
     @staticmethod
     def find(name: str) -> str:
@@ -66,9 +66,9 @@ class LocalDB:
                 massage_id, date = i
                 with TinyDB(self.file_name, indent=4) as db:
                     if not db.contains(Query().id == massage_id):
-                        with self.lock:
-                            db.insert(
-                                {'id': massage_id, 'Date': date, 'Box': flag_select})
+                        # with self.lock:
+                        db.insert(
+                            {'id': massage_id, 'Date': date, 'Box': flag_select})
         logger.info(
             f"{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| Write email in DATABASE")
 
@@ -208,7 +208,7 @@ class Mail:
         :param imap: Объект imaplib в котором содержатся данные о сообщение(id, дата, заголовок, тело сообщения)
         :param date: Дата для выборки данных из почты
         :param flag_select: Директория сообщений(входящие, исходящие)
-        :return: Если было получено новое сообщение которое ранее не обрабатывалось , возвращаем True если нет False
+        :return: Если было получено новое сообщение которое ранее не обрабатывалось, возвращаем True если нет False
         """
         res: str
         msg: imap
