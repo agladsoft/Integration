@@ -164,7 +164,6 @@ class Mail:
         self.request_date_today = f'(SINCE "{self.today.strftime(self.date_format)}")'
         self.request_date_yesterday = f'(SINCE "{self.yesterday.strftime(self.date_format)}") (BEFORE "{self.today.strftime(self.date_format)}")'
         self.local_db = LocalDB()
-        self.mail_lock = Lock()
 
     def connect_email(self, user: tuple) -> None:
         """
@@ -176,15 +175,14 @@ class Mail:
         """
         mail_login = user[0]
         mail_password = user[1]
-        with self.mail_lock:
-            try:
-                time.sleep(1)
-                imap: imaplib = imaplib.IMAP4_SSL(self.server)
-                imap.login(mail_login, mail_password)
-            except Exception:
-                logger.info(
-                    f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| No connection {mail_login} wrong password or login')
-                return
+        try:
+            time.sleep(1)
+            imap: imaplib = imaplib.IMAP4_SSL(self.server)
+            imap.login(mail_login, mail_password)
+        except Exception:
+            logger.info(
+                f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| No connection {mail_login} wrong password or login')
+            return
         self.list_table: List[dict] = LocalDB(mail_login).id_list
         INBOX, SENT = self.get_inbox_sent(imap.list())
         logger.info(
