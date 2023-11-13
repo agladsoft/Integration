@@ -16,7 +16,7 @@ cd $path
 source ${path}/venv/bin/activate
 while true; do
     truncate -s 0 ${path}/nohup.out
-    python3 ${path}/run.py >> ${path}/nohup.out 2>&1
+    python3 ${path}/run.py;
     if [ $? -ne 0 ]; then
         echo "Error executing python3. Exiting..."
         break
