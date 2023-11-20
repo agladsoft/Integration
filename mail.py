@@ -1,5 +1,6 @@
 import imaplib
 import email
+import logging
 import os.path
 import time
 from email.header import decode_header
@@ -87,7 +88,7 @@ class LocalDB:
                         query = Query()
                         db.remove(query.Date < date)
                 except Exception as ex:
-                    logger.info(f'Ошибка при чтение файла {name}')
+                    logger.info(f'Ошибка при чтении файла {name}: {ex}')
 
     @staticmethod
     def delete_by_date_user(name):
@@ -101,7 +102,7 @@ class LocalDB:
                 query: Query = Query()
                 db.remove(query.Date < date)
         except Exception as ex:
-            logger.info(f'Ошибка при чтение файла {name}. Ошибка : {ex}')
+            logger.info(f'Ошибка при чтении файла {name}. Ошибка : {ex}')
 
 
 def change_charset(text: str, char: str) -> str:
@@ -120,6 +121,7 @@ def change_charset(text: str, char: str) -> str:
             return soup.prettify()
         return text
     except RecursionError:
+        logging.error(f"RecursionError occur for text {text} and char {char}")
         return text
 
 
@@ -169,35 +171,40 @@ class Mail:
         """
         Подключение к серверу через библиотеку imap для чтения сообщений.
         Чтение сообщений из почты
-        :param mail_login: email пользователя
-        :param mail_password: password пользователя
         :return: None
         """
-        mail_login = user[0]
-        mail_password = user[1]
         try:
-            time.sleep(1)
-            imap: imaplib = imaplib.IMAP4_SSL(self.server)
-            imap.login(mail_login, mail_password)
-        except Exception:
+            mail_login = user[0]
+            mail_password = user[1]
+            try:
+                time.sleep(1)
+                logger.info(
+                    f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| Will create imap object...')
+                imap = imaplib.IMAP4_SSL(self.server, timeout=60)
+                logger.info(
+                    f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| Will login {mail_login}...')
+                imap.login(mail_login, mail_password)
+            except Exception:
+                logger.info(
+                    f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| No connection {mail_login} wrong password or login')
+                return
+            self.list_table: List[dict] = LocalDB(mail_login).id_list
+            INBOX, SENT = self.get_inbox_sent(imap.list())
             logger.info(
-                f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| No connection {mail_login} wrong password or login')
-            return
-        self.list_table: List[dict] = LocalDB(mail_login).id_list
-        INBOX, SENT = self.get_inbox_sent(imap.list())
-        logger.info(
-            f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| Connect Email Inbox {mail_login}')
-        imap.select(INBOX, readonly=True)
-        if self.mail_read(user=mail_login, imap=imap, date=self.request_date_today, flag_select='INBOX'):
-            self.mail_read(user=mail_login, imap=imap, date=self.request_date_yesterday, flag_select='INBOX')
-        logger.info(
-            f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| Connect Email Send {mail_login}')
-        imap.select(SENT, readonly=True)
-        if self.mail_read(user=mail_login, imap=imap, date=self.request_date_today, flag_select='SEND'):
-            self.mail_read(user=mail_login, imap=imap, date=self.request_date_yesterday, flag_select='SEND')
-        imap.close()
-        imap.logout()
-        self.local_db.delete_by_date_user(mail_login)
+                f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| Connect Email Inbox {mail_login}')
+            imap.select(INBOX, readonly=True)
+            if self.mail_read(user=mail_login, imap=imap, date=self.request_date_today, flag_select='INBOX'):
+                self.mail_read(user=mail_login, imap=imap, date=self.request_date_yesterday, flag_select='INBOX')
+            logger.info(
+                f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| Connect Email Send {mail_login}')
+            imap.select(SENT, readonly=True)
+            if self.mail_read(user=mail_login, imap=imap, date=self.request_date_today, flag_select='SEND'):
+                self.mail_read(user=mail_login, imap=imap, date=self.request_date_yesterday, flag_select='SEND')
+            imap.close()
+            imap.logout()
+            self.local_db.delete_by_date_user(mail_login)
+        except Exception as e:
+            logger.exception(f"Unexpected error occur: {e}")
 
     def mail_read(self, user: str, imap: imaplib.IMAP4_SSL, date: datetime, flag_select=None) -> bool:
         """
@@ -210,22 +217,24 @@ class Mail:
         :param flag_select: Директория сообщений(входящие, исходящие)
         :return: Если было получено новое сообщение которое ранее не обрабатывалось, возвращаем True если нет False
         """
-        res: str
-        msg: imap
+        # res: str
+        msg: list
         count: int = 0
         flag: bool = False
         list_date_title: list = []
+        logger.info(
+            f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| Will search for messages...')
         list_posts: list = sorted(imap.search(None, date)[1][0].split(), reverse=True)
         for i, post in enumerate(list_posts, 1):
             res, msg = imap.fetch(post, '(RFC822)')
             try:
-                msg: imaplib = email.message_from_bytes(msg[0][1])
+                msg = email.message_from_bytes(msg[0][1])
             except Exception as ex:
                 logger.info(
                     f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| error read massage ',
                     str(ex))
                 try:
-                    msg: imaplib = self.for_massage(msg)
+                    msg = self.for_massage(msg)
                 except Exception as exx:
                     logger.info(
                         f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| {msg} error {exx}')
@@ -248,7 +257,7 @@ class Mail:
         self.list_table: List[str] = LocalDB(user).id_list
         if count == 0:
             logger.info(
-                f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| Don`t new massages')
+                f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| No new massages')
         else:
             logger.info(
                 f"{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| Write {count} massages successful")
@@ -285,14 +294,24 @@ class Mail:
             for tit in title_end[1:]:
                 res: str = '-'.join(self.find_deal(tit))
                 if not res:
+                    logger.info(
+                        f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| {user} res is empty')
                     continue
                 logger.info(
                     f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| {user} write crm #=  {res}')
                 if res[0] in ['K', 'К']:
+                    logger.info(
+                        f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| {user} res is {res} - will try to update_contact_post_account')
                     if CrmClient().update_contact_post_account(res, value, user=user):
+                        logger.info(
+                            f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| {user} res is {res} - update_contact_post_account returned True')
                         return True
                 elif res[0] == 'П':
+                    logger.info(
+                        f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| {user} res is {res} - will try to update_contact_post_opportunity')
                     if CrmClient().update_contact_post_opportunity(res, value, user=user):
+                        logger.info(
+                            f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| {user} res is {res} - update_contact_post_opportunity returned True')
                         return True
             logger.info(
                 f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| Не найден #номер_проекта и #номер_контрагента')
@@ -382,7 +401,10 @@ class Mail:
             else:
                 try:
                     return subject.decode(encoding)
-                except LookupError:
+                except LookupError as e:
+                    logger.error(
+                        f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| Error during subject decode {subject}: {e}')
+
                     subject: str = ' '.join(list(subject))
                     return subject
 
@@ -398,7 +420,10 @@ class Mail:
         try:
             text_result: str = text.decode(detect['encoding'])
             result: str = change_charset(text_result, 'utf-8')
-        except (AttributeError, TypeError):
+        except (AttributeError, TypeError) as e:
+            logger.error(
+                f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| Error during text decode {text}: {e}')
+
             if text is None:
                 return ''
             result: str = change_charset(text, 'utf-8')
@@ -414,12 +439,17 @@ class Mail:
         try:
             date: str = parse(date).strftime('%Y-%m-%d')
             return date
-        except Exception:
+        except Exception as e:
+            logger.error(
+                f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| Ошибка при парсинге1 даты  {date}: {e}')
             try:
                 date: str = date.split(',')[1].replace('(', '').replace(')', '')[:-10]
                 date_obj: datetime = parse(date)
                 date_str: str = date_obj.strftime('%Y-%m-%d')
-            except Exception:
+            except Exception as e:
+                logger.error(
+                    f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| Ошибка при парсинге2 даты  {date}: {e}')
+
                 date_str = datetime.datetime.now().strftime('%Y-%m-%d')
             return date_str
 
@@ -432,6 +462,8 @@ class Mail:
         try:
             file_name = decode_header(msg.get_filename())[0][0].decode()
         except Exception:
+            logger.error(
+                f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| Ошибка при попытке decode_header msg {msg}')
             file_name = msg.get_filename()
         if bool(file_name):
             file_path = os.path.join(f'/home/uventus/PycharmProjects/New_Proect/Integration_crm/{file_name}')
@@ -451,12 +483,14 @@ class Mail:
                 'Return-path'].strip(
                 '<>') else \
                 msg['Return-path'].strip('<>')
-        except Exception:
+        except Exception as ex:
+            logger.info(
+                f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| Ошибка в получение отправителя1 {ex}')
             try:
                 sender: str = msg['From'].split('<')[1].replace('>', '')
             except Exception as ex:
                 logger.info(
-                    f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| Ошибка в получение отправителя {ex}')
+                    f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| Ошибка в получение отправителя2 {ex}')
                 sender: str = 'Отправитель не получен'
         recipients: list = []
         addr_fields: list = ['To', 'Cc', 'Bcc']

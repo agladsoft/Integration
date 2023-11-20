@@ -34,34 +34,34 @@ def write_crm():
 
     with open("config.yaml", 'r') as stream:
         data_loaded = yaml.safe_load(stream)
-        file_name: str = data_loaded['file_name']
-        processing: int = data_loaded['Processing']
-        user = []
-        if os.path.isfile(file_name):
-            encrypt_user(file_name)
-        users: list = decrypt_user(file_name)
-        for row in users:
-            email_user: str
-            password: str
-            email_user, password = row[0].split(';')
-            if not check_email(email_user):
-                logger.info(f'{datetime.datetime.now().replace(microsecond=0)}Wrong email {email_user}')
-                continue
-            else:
-                user.append((email_user, password))
+    file_name: str = data_loaded['file_name']
+    processing: int = data_loaded['Processing']
+    user = []
+    if os.path.isfile(file_name):
+        encrypt_user(file_name)
+    users: list = decrypt_user(file_name)
+    for row in users:
+        email_user: str
+        password: str
+        email_user, password = row[0].split(';')
+        if not check_email(email_user):
+            logger.info(f'{datetime.datetime.now().replace(microsecond=0)}Wrong email {email_user}')
+            continue
+        else:
+            user.append((email_user, password))
+    # for email, password in user:
+    #     Mail().connect_email(email, password)
+    with ProcessPoolExecutor(max_workers=processing) as executor:
+        future_list = []
         # for email, password in user:
-        #     Mail().connect_email(email, password)
-        with ProcessPoolExecutor(max_workers=processing) as executor:
-            future_list = []
-            # for email, password in user:
-            future_list = executor.map(Mail().connect_email,user)
-        # future_list.append(future)
-        # executor.map(Mail().connect_email, user)
-        # wait(future_list)
-        # logger.info('Delete last day')
-        # LocalDB().delete_by_date()
-        # for f in as_completed(future_list):\
-        #     print(f.result())
+        future_list = executor.map(Mail().connect_email, user)
+    # future_list.append(future)
+    # executor.map(Mail().connect_email, user)
+    # wait(future_list)
+    # logger.info('Delete last day')
+    # LocalDB().delete_by_date()
+    # for f in as_completed(future_list):\
+    #     print(f.result())
 
 
 if __name__ == '__main__':
