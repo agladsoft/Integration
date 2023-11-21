@@ -180,7 +180,7 @@ class Mail:
                 time.sleep(1)
                 logger.info(
                     f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| Will create imap object...')
-                imap = imaplib.IMAP4_SSL(self.server, timeout=60)
+                imap = imaplib.IMAP4_SSL(self.server)
                 logger.info(
                     f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| Will login {mail_login}...')
                 imap.login(mail_login, mail_password)
