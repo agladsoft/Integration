@@ -1,4 +1,4 @@
-import imaplib
+import imaplib2
 import email
 import logging
 import os.path
@@ -180,7 +180,7 @@ class Mail:
                 time.sleep(1)
                 logger.info(
                     f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| Will create imap object...')
-                imap = imaplib.IMAP4_SSL(self.server)
+                imap = imaplib2.IMAP4_SSL(self.server)
                 logger.info(
                     f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| Will login {mail_login}...')
                 imap.login(mail_login, mail_password)
@@ -206,13 +206,13 @@ class Mail:
         except Exception as e:
             logger.exception(f"Unexpected error occur: {e}")
 
-    def mail_read(self, user: str, imap: imaplib.IMAP4_SSL, date: datetime, flag_select=None) -> bool:
+    def mail_read(self, user: str, imap: imaplib2.IMAP4_SSL, date: datetime, flag_select=None) -> bool:
         """
         Получение сообщений из почты, выборка данных из сообщения: дата, id, если id присутствует в базе данных пропускаем
          сообщение, если нет то получаем заголовок, тело сообщения в формате html, получателей и отправителей
           и передаём сообщение для записи.
         :param user: Email пользователя для записи данных в базу данных
-        :param imap: Объект imaplib в котором содержатся данные о сообщение(id, дата, заголовок, тело сообщения)
+        :param imap: Объект imaplib2 в котором содержатся данные о сообщение(id, дата, заголовок, тело сообщения)
         :param date: Дата для выборки данных из почты
         :param flag_select: Директория сообщений(входящие, исходящие)
         :return: Если было получено новое сообщение которое ранее не обрабатывалось, возвращаем True если нет False
@@ -317,16 +317,16 @@ class Mail:
                 f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| Не найден #номер_проекта и #номер_контрагента')
         return False
 
-    def for_massage(self, massage: Message) -> imaplib:
+    def for_massage(self, massage: Message) -> imaplib2:
         """
         При возникновении ошибки при получении данных проходим через цикл и получаем сообщение из списка кортежей
         :param massage: Список кортежей с объектами сообщений
-        :return: Объект imaplib в котором содержатся данные о сообщение(id, дата, заголовок, тело сообщения)
+        :return: Объект imaplib2 в котором содержатся данные о сообщение(id, дата, заголовок, тело сообщения)
         """
         logger.info(f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| error massage')
         for n, m in enumerate(massage):
             try:
-                msg: imaplib = email.message_from_bytes(massage[n][1])
+                msg: imaplib2 = email.message_from_bytes(massage[n][1])
                 return msg
             except Exception as ex:
                 logger.info(f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| {ex}')
@@ -335,7 +335,7 @@ class Mail:
     def get_message_id_date(self, msg: Message) -> Tuple[str, str]:
         """
         Получение id сообщения и даты сообщения
-        :param msg: Объект imaplib в котором содержатся данные о сообщение(id, дата, заголовок, тело сообщения)
+        :param msg: Объект imaplib2 в котором содержатся данные о сообщение(id, дата, заголовок, тело сообщения)
         :return: id сообщения и даты
         """
         try:
@@ -412,7 +412,7 @@ class Mail:
         """
         Производим раскодировку сообщение при помощи библиотеки charset_normalizer и
          метода detect где мы определяем кодировку
-        :param msg:Объект imaplib в котором содержатся данные о сообщение(id, дата, заголовок, тело сообщения)
+        :param msg:Объект imaplib2 в котором содержатся данные о сообщение(id, дата, заголовок, тело сообщения)
         :return: Раскодированное тело сообщения
         """
         text: bytes = msg.get_payload(decode=True)
@@ -474,7 +474,7 @@ class Mail:
     def get_sender_recipients(self, msg: Message) -> Tuple[str, List[str]]:
         """
         Получение из сообщения отправителя и получателей
-        :param msg:Объект imaplib в котором содержатся данные о сообщение(id, дата, заголовок, тело сообщения)
+        :param msg:Объект imaplib2 в котором содержатся данные о сообщение(id, дата, заголовок, тело сообщения)
         :return: Отправитель, список получателей
         """
         ADDR_PATTERN: re = re.compile('<(.*?)>')

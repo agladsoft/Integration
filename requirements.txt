@@ -7,6 +7,7 @@ cryptography==40.0.2
 dateparser==1.1.8
 html2text==2020.1.16
 idna==3.4
+imaplib2==3.6
 pyAesCrypt==6.0.0
 pycparser==2.21
 pyspnego==0.9.0
