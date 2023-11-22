@@ -48,7 +48,7 @@ def write_crm():
             logger.info(f'{datetime.datetime.now().replace(microsecond=0)}Wrong email {email_user}')
             continue
         else:
-            user.append((email_user, password))
+            user.append((email_user.strip(), password.strip()))
     # for email, password in user:
     #     Mail().connect_email(email, password)
     with ProcessPoolExecutor(max_workers=processing) as executor:
