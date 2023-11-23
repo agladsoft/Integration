@@ -21,5 +21,5 @@ while true; do
         echo "Error executing python3. Exiting..."
         break
     fi
-    sleep 60
+    sleep 600
 done
