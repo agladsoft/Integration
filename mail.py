@@ -1,3 +1,5 @@
+import random
+
 import imaplib2
 import email
 import logging
@@ -177,7 +179,7 @@ class Mail:
             mail_login = user[0]
             mail_password = user[1]
             try:
-                time.sleep(1)
+                time.sleep(random.choice([1, 2, 3]))
                 logger.info(
                     f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| Will create imap object...')
                 imap = imaplib2.IMAP4_SSL(self.server,timeout=60)
