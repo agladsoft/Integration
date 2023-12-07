@@ -180,7 +180,7 @@ class Mail:
                 time.sleep(1)
                 logger.info(
                     f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| Will create imap object...')
-                imap = imaplib2.IMAP4_SSL(self.server)
+                imap = imaplib2.IMAP4_SSL(self.server,timeout=60)
                 logger.info(
                     f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| Will login {mail_login}...')
                 imap.login(mail_login, mail_password)
@@ -226,7 +226,13 @@ class Mail:
             f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| Will search for messages...')
         list_posts: list = sorted(imap.search(None, date)[1][0].split(), reverse=True)
         for i, post in enumerate(list_posts, 1):
-            res, msg = imap.fetch(post, '(RFC822)')
+            try:
+                res, msg = imap.fetch(post, '(RFC822)')
+            except Exception as ex:
+                logger.info(
+                    f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| error read massage ',
+                    str(ex))
+                continue
             try:
                 msg = email.message_from_bytes(msg[0][1])
             except Exception as ex:
