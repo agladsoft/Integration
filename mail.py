@@ -1,5 +1,5 @@
 import random
-
+import json
 import imaplib2
 import email
 import logging
@@ -36,7 +36,26 @@ class LocalDB:
             self.file_name: str = self.find(name)
             # self.lock = Lock()
             # with self.lock:
+            self.fix_json(self.file_name)
             self.id_list: list = [i['id'] for i in TinyDB(self.file_name, indent=4).all()]
+
+    @staticmethod
+    def fix_json(file_path):
+        with open(file_path, 'r', encoding='utf-8') as file:
+            content = file.read()
+        try:
+            data = json.loads(content)
+            return
+        except json.JSONDecodeError as e:
+            fixed_content = content.rsplit('},')
+            fixed_content = '},'.join(fixed_content[:-1])[:-1] + '}}}'
+            try:
+                data = json.loads(fixed_content)
+                with open(file_path, 'w', encoding='utf-8') as file:
+                    json.dump(data, file, indent=4, ensure_ascii=False)
+                return data
+            except json.JSONDecodeError as e:
+                return None
 
     @staticmethod
     def find(name: str) -> str:
@@ -182,13 +201,14 @@ class Mail:
                 time.sleep(random.choice([1, 2, 3]))
                 logger.info(
                     f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| Will create imap object...')
-                imap = imaplib2.IMAP4_SSL(self.server,timeout=60)
+                imap = imaplib2.IMAP4_SSL(self.server, timeout=60)
                 logger.info(
                     f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| Will login {mail_login}...')
                 imap.login(mail_login, mail_password)
-            except Exception:
+            except Exception as ex:
                 logger.info(
-                    f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| No connection {mail_login} wrong password or login')
+                    f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| No connection {mail_login} wrong password or login'
+                    f'{ex}')
                 return
             self.list_table: List[dict] = LocalDB(mail_login).id_list
             INBOX, SENT = self.get_inbox_sent(imap.list())
@@ -236,8 +256,11 @@ class Mail:
                     str(ex))
                 continue
             try:
-                msg = email.message_from_bytes(msg[0][1])
-            except Exception as ex:
+                if isinstance(msg[0][1], int):
+                    msg = self.for_massage(msg)
+                else:
+                    msg = email.message_from_bytes(msg[0][1])
+            except (Exception, AttributeError) as ex:
                 logger.info(
                     f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| error read massage ',
                     str(ex))
@@ -352,7 +375,10 @@ class Mail:
             logger.info(
                 f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| Ошибка получения id {ex}')
             massage_id: str = 'id не получен'
-        date: str = self.get_date(msg['DATE'])
+        try:
+            date: str = self.get_date(msg['DATE'])
+        except TypeError as ex:
+            date: str = str(datetime.datetime.utcnow())
         return massage_id, date
 
     def get_message_title_file(self, msg: Message) -> str:
@@ -429,7 +455,7 @@ class Mail:
             text_result: str = text.decode(detect['encoding'])
             result: str = change_charset(text_result, 'utf-8')
         except (AttributeError, TypeError) as e:
-            logger.error(
+            logger.info(
                 f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| Error during text decode {text}: {e}')
 
             if text is None:
