@@ -1,6 +1,5 @@
 import random
 import json
-import imaplib2
 import email
 import logging
 import os.path
@@ -9,6 +8,7 @@ from email.header import decode_header
 import datetime
 from email.message import Message
 from threading import current_thread
+from imap_tools import MailBox, AND
 
 import charset_normalizer as cn
 from bs4 import BeautifulSoup, Tag
@@ -18,6 +18,8 @@ import re
 from typing import List, Tuple, Union
 from log import logger
 from dateutil.parser import parse
+
+
 # from multiprocessing import Lock
 
 
@@ -201,7 +203,7 @@ class Mail:
                 time.sleep(random.choice([1, 2, 3]))
                 logger.info(
                     f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| Will create imap object...')
-                imap = imaplib2.IMAP4_SSL(self.server, timeout=60)
+                imap = MailBox(host='imap.mail.ru')
                 logger.info(
                     f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| Will login {mail_login}...')
                 imap.login(mail_login, mail_password)
@@ -211,24 +213,22 @@ class Mail:
                     f'{ex}')
                 return
             self.list_table: List[dict] = LocalDB(mail_login).id_list
-            INBOX, SENT = self.get_inbox_sent(imap.list())
             logger.info(
                 f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| Connect Email Inbox {mail_login}')
-            imap.select(INBOX, readonly=True)
             if self.mail_read(user=mail_login, imap=imap, date=self.request_date_today, flag_select='INBOX'):
                 self.mail_read(user=mail_login, imap=imap, date=self.request_date_yesterday, flag_select='INBOX')
             logger.info(
                 f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| Connect Email Send {mail_login}')
-            imap.select(SENT, readonly=True)
+            name_sent = [i.name for i in imap.folder.list() if i.flags and 'Sent' in i.flags[0]]
+            imap.folder.set(*name_sent)
             if self.mail_read(user=mail_login, imap=imap, date=self.request_date_today, flag_select='SEND'):
                 self.mail_read(user=mail_login, imap=imap, date=self.request_date_yesterday, flag_select='SEND')
-            imap.close()
             imap.logout()
             self.local_db.delete_by_date_user(mail_login)
         except Exception as e:
             logger.exception(f"Unexpected error occur: {e}")
 
-    def mail_read(self, user: str, imap: imaplib2.IMAP4_SSL, date: datetime, flag_select=None) -> bool:
+    def mail_read(self, user: str, imap: MailBox, date: datetime, flag_select=None) -> bool:
         """
         Получение сообщений из почты, выборка данных из сообщения: дата, id, если id присутствует в базе данных пропускаем
          сообщение, если нет то получаем заголовок, тело сообщения в формате html, получателей и отправителей
@@ -246,39 +246,19 @@ class Mail:
         list_date_title: list = []
         logger.info(
             f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| Will search for messages...')
-        list_posts: list = sorted(imap.search(None, date)[1][0].split(), reverse=True)
-        for i, post in enumerate(list_posts, 1):
-            try:
-                res, msg = imap.fetch(post, '(RFC822)')
-            except Exception as ex:
-                logger.info(
-                    f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| error read massage ',
-                    str(ex))
-                continue
-            try:
-                if isinstance(msg[0][1], int):
-                    msg = self.for_massage(msg)
-                else:
-                    msg = email.message_from_bytes(msg[0][1])
-            except (Exception, AttributeError) as ex:
-                logger.info(
-                    f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| error read massage ',
-                    str(ex))
-                try:
-                    msg = self.for_massage(msg)
-                except Exception as exx:
-                    logger.info(
-                        f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| {msg} error {exx}')
-                    continue
-            massage_id, date = self.get_message_id_date(msg)
+        today = datetime.datetime.today().date() + datetime.timedelta(days=1)
+        yesterday = today - datetime.timedelta(days=2)
+        for i, msg in enumerate(
+                imap.fetch(AND(date_gte=yesterday, date_lt=today), mark_seen=False, reverse=True), 1):
+            massage_id, date = msg.uid, msg.date.strftime('%Y-%m-%d')
             if massage_id in self.list_table:
                 break
-            sender, recipients = self.get_sender_recipients(msg)
-            title = self.get_message_title_file(msg)
+            sender, recipients = msg.from_, list(msg.to)
+            title = msg.subject
             list_date_title.append((massage_id, date))
             if self.check_opportunity(title):
                 continue
-            text = self.get_message_text_file(msg)
+            text = msg.html
             if self.mail_write(title, text, recipients, sender, flag_select, user=user):
                 count += 1
         else:
@@ -348,7 +328,7 @@ class Mail:
                 f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| Не найден #номер_проекта и #номер_контрагента')
         return False
 
-    def for_massage(self, massage: Message) -> imaplib2:
+    def for_massage(self, massage: Message) -> MailBox:
         """
         При возникновении ошибки при получении данных проходим через цикл и получаем сообщение из списка кортежей
         :param massage: Список кортежей с объектами сообщений
@@ -357,7 +337,7 @@ class Mail:
         logger.info(f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| error massage')
         for n, m in enumerate(massage):
             try:
-                msg: imaplib2 = email.message_from_bytes(massage[n][1])
+                msg: MailBox = email.message_from_bytes(massage[n][1])
                 return msg
             except Exception as ex:
                 logger.info(f'{datetime.datetime.now().replace(microsecond=0)}|Thread {current_thread().ident}| {ex}')
