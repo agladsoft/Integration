@@ -1,3 +1,4 @@
+backports.zoneinfo==0.2.1
 beautifulsoup4==4.12.2
 certifi==2023.5.7
 cffi==1.15.1
@@ -5,15 +6,20 @@ chardet==5.1.0
 charset-normalizer==3.1.0
 cryptography==40.0.2
 dateparser==1.1.8
+demjson3==3.0.6
+fix-busted-json==0.0.18
 html2text==2020.1.16
 idna==3.4
+imap-tools==1.7.2
+IMAPClient==3.0.1
 imaplib2==3.6
+loguru==0.7.2
 pyAesCrypt==6.0.0
 pycparser==2.21
 pyspnego==0.9.0
 python-dateutil==2.8.2
 pytz==2023.3
-PyYAML==6.0
+PyYAML==6.0.1
 regex==2023.5.5
 requests==2.30.0
 requests-ntlm==1.2.0
