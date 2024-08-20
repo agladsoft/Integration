@@ -54,6 +54,7 @@ def write_crm():
         executor.map(Mail().connect_email, user)
 
 
+
 if __name__ == '__main__':
     logger.info('Run to Work')
     write_crm()
