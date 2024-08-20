@@ -8,7 +8,6 @@ from mail import Mail, check_email, LocalDB
 from multiprocessing import Pool as ThreadPool
 from ecrypt_user import encrypt_user, decrypt_user
 from concurrent.futures import ProcessPoolExecutor
-from new_lib import test_imap_tools
 
 
 def time_count(func):
