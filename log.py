@@ -3,7 +3,7 @@ import os
 from logging.handlers import RotatingFileHandler
 from loguru import logger
 
-logger.add("run.log", rotation="50 MB", retention="10 days")
+logger.add("add.log", rotation="50 MB", retention="10 days")
 
 #
 #
