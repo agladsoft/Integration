@@ -50,15 +50,15 @@ def write_crm():
         else:
             user.append((email_user.strip(), password.strip()))
 
-    for us in user:
-        Mail().connect_email(us)
-    # with ProcessPoolExecutor(max_workers=processing) as executor:
-    #     try:
-    #         executor.map(Mail().connect_email, user)
-    #     finally:
-    #         logger.info('End Work')
-    #         print('End Work')
-    #         executor.shutdown(wait=False)
+    # for us in user:
+    #     Mail().connect_email(us)
+    with ProcessPoolExecutor(max_workers=processing) as executor:
+        try:
+            executor.map(Mail().connect_email, user)
+        finally:
+            logger.info('End Work')
+            print('End Work')
+            executor.shutdown(wait=False)
 
 
 if __name__ == '__main__':
